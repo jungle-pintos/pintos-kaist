@@ -133,6 +133,8 @@ struct thread
 	struct semaphore fork_sema;
 	struct semaphore wait_sema;
 	struct semaphore free_sema;
+
+	struct file *running_file; // 현재 실행중인 파일
 };
 
 /* If false (default), use round-robin scheduler.

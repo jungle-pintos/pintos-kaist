@@ -339,10 +339,11 @@ void process_exit(void)
 
 	// palloc_free_multiple(curr->file_descriptor_table, FDT_PAGES);
 
-	process_cleanup();
 
 	sema_up(&curr->wait_sema);
+	file_close(curr->running_file);
 	sema_down(&curr->free_sema);
+	process_cleanup();
 }
 
 /* Free the current process's resources. */
@@ -482,6 +483,9 @@ load(const char *file_name, struct intr_frame *if_) // parsing 기능을 추가�
 		printf("load: %s: open failed\n", file_name);
 		goto done;
 	}
+	t->running_file = file;
+	file_deny_write(t->running_file);
+
 
 	/* Read and verify executable header. */
 	// ELF 파일의 헤더정보를 읽어와서 저장함
@@ -565,7 +569,7 @@ load(const char *file_name, struct intr_frame *if_) // parsing 기능을 추가�
 
 done:
 	/* We arrive here whether the load is successful or not. */
-	file_close(file);
+	// file_close(file);
 	return success;
 }
 
