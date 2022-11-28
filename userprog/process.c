@@ -32,7 +32,7 @@ struct thread *get_child(tid_t pid);
 
 struct file *get_file(int fd)
 {
-	if (fd < 2 && fd >= FDT_COUNT_LIMIT)
+	if (fd < 2 || fd >= FDT_COUNT_LIMIT)
 		return NULL;
 
 	return thread_current()->file_descriptor_table[fd];
@@ -123,8 +123,11 @@ tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
 		return TID_ERROR;
 
 	struct thread *child = get_child(pid);
-
 	sema_down(&child->fork_sema);
+
+
+	if (child->exit_status == -1)
+		return TID_ERROR;
 
 	return pid;
 }
@@ -215,6 +218,9 @@ __do_fork(void *aux)
 		goto error;
 
 #endif
+
+	if (parent->fd_number >= FDT_COUNT_LIMIT)
+		goto error;
 
 	current->file_descriptor_table[0] = parent->file_descriptor_table[0];
 	current->file_descriptor_table[1] = parent->file_descriptor_table[1];
@@ -308,6 +314,9 @@ int process_wait(tid_t child_tid UNUSED)
 
 	// printf("----------child_tid is %d-------------\n", child_tid);
 
+	if (child_tid < 0)
+		return -1;
+
 	if (child == NULL)
 		return -1;
 
@@ -329,6 +338,7 @@ int process_wait(tid_t child_tid UNUSED)
 void process_exit(void)
 {
 	struct thread *curr = thread_current();
+	file_close(curr->running_file);
 
 	/* TODO: Your code goes here.
 	 * TODO: Implement process termination message (see
@@ -337,13 +347,12 @@ void process_exit(void)
 	// for (int i = 2; i < curr->fd_number; i++)
 	// 	close(i);
 
-	// palloc_free_multiple(curr->file_descriptor_table, FDT_PAGES);
+	palloc_free_multiple(curr->file_descriptor_table, FDT_PAGES);
 
 
-	sema_up(&curr->wait_sema);
-	file_close(curr->running_file);
-	sema_down(&curr->free_sema);
 	process_cleanup();
+	sema_up(&curr->wait_sema);
+	sema_down(&curr->free_sema);
 }
 
 /* Free the current process's resources. */

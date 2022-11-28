@@ -413,7 +413,7 @@ void seek(int fd, unsigned position)
 	struct file *f = fd_to_file(fd);
 	if (f == NULL)
 		return;
-	check_address(f);
+	// check_address(f);
 
 	file_seek(f, position);
 
