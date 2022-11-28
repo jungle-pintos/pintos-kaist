@@ -156,7 +156,7 @@ void exit(int status)
 }
 tid_t fork(const char *thread_name, struct intr_frame *if_)
 {
-	struct thread *t = thread_current();
+	// struct thread *t = thread_current();
 	return process_fork(thread_name, if_);
 
 	// Create new process which is the clone of current process with the name THREAD_NAME.
